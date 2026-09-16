@@ -67,11 +67,12 @@ Once the server is running, three distinct web pages power the system. Each serv
 
 ## 📁 Repository Structure
 ```text
-├── admin.html          # Interpreter / Host broadcasting console
-├── index.html          # Mobile listener interface
-├── monitor.html        # Central technician dashboard (3-column layout)
-├── server.js           # Node.js backend & WebRTC signaling server
-├── package.json        # Project metadata & dependencies
-├── package-lock.json   # Locked dependency versions
-├── start_server.bat    # Windows one-click auto-setup script
+├── admin.html           # Interpreter / Host broadcasting console
+├── index.html           # Mobile listener interface
+├── monitor.html         # Central technician dashboard (3-column layout)
+├── qrcode.min.js        # Offline QR Code generator library
+├── server.js            # Node.js backend & WebRTC signaling server
+├── package.json         # Project metadata & dependencies
+├── package-lock.json    # Locked dependency versions
+├── start_server.bat     # Windows one-click auto-setup script
 └── start_server.command # Mac one-click auto-setup script
