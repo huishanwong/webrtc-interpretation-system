@@ -36,9 +36,12 @@ Make sure your computer has **Node.js** installed first. You do **not** need to 
 ---
 
 ## 🎵 Background Music (`music` Folder)
-* **How it works**: The system automatically creates a folder named `music` in the project root directory on its first run.
-* **How to use**: Place any **`.mp3`** audio files you want to use as background or intermission music directly into this `music/` folder.
-* **API Integration**: The Admin panel automatically fetches and lists all available MP3 files via an API endpoint (`/api/music-list`), allowing the operator to control and sync background tracks seamlessly during the session. *(Note: Ensure your MP3 assets are royalty-free before public distribution.)*
+* **How it works**: The system automatically reads audio files from the `music/` directory.
+* **Preloaded Tracks**: This repository includes default custom preloaded MP3 tracks for testing and channel checks:
+  * `cantonese.mp3`
+  * `english.mp3`
+  * `mandarin.mp3`
+* **API Integration**: The Admin panel automatically fetches and lists all available MP3 files via an API endpoint (`/api/music-list`), allowing the operator to control and sync background tracks seamlessly during the session.
 
 ---
 
@@ -77,6 +80,10 @@ Once the server is running, three distinct web pages power the system. Each serv
 ├── admin.html           # Interpreter / Host broadcasting console
 ├── index.html           # Mobile listener interface
 ├── monitor.html         # Central technician dashboard (3-column layout)
+├── music/               # Preloaded background & test music folder
+│   ├── cantonese.mp3    # Cantonese preloaded track
+│   ├── english.mp3      # English preloaded track
+│   └── mandarin.mp3     # Mandarin preloaded track
 ├── qrcode.min.js        # Offline QR Code generator library
 ├── server.js            # Node.js backend & WebRTC signaling server
 ├── package.json         # Project metadata & dependencies
