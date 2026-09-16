@@ -81,9 +81,25 @@ Once the server is running, three distinct web pages power the system. Each serv
 ├── index.html           # Mobile listener interface
 ├── monitor.html         # Central technician dashboard (3-column layout)
 ├── music/               # Preloaded background & test music folder
+│   ├── arabic.mp3       # Arabic preloaded track
+│   ├── burmese.mp3      # Burmese preloaded track
 │   ├── cantonese.mp3    # Cantonese preloaded track
 │   ├── english.mp3      # English preloaded track
+│   ├── filipino.mp3     # Filipino preloaded track
+│   ├── french.mp3       # french preloaded track
+│   └── german.mp3       # German preloaded track
+│   └── hindi.mp3        # Hindi preloaded track
+│   └── indonesia.mp3    # Indonesia preloaded track
+│   └── japanese.mp3     # Japanese preloaded track
+│   └── khmer.mp3        # Khmer preloaded track
+│   └── korean.mp3       # Korean preloaded track
+│   └── malay.mp3        # Malay preloaded track
 │   └── mandarin.mp3     # Mandarin preloaded track
+│   └── portuguese.mp3   # Portuguese preloaded track
+│   └── russian.mp3      # Russian preloaded track
+│   └── spanish.mp3      # Spanish preloaded track
+│   └── thai.mp3         # Thai preloaded track
+│   └── vietnamese.mp3   # Vietnamese preloaded track
 ├── qrcode.min.js        # Offline QR Code generator library
 ├── server.js            # Node.js backend & WebRTC signaling server
 ├── package.json         # Project metadata & dependencies
