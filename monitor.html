@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Status Monitor</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="qrcode.min.js"></script> 
+    <style>
+        /* [THEME] Dark-mode dashboard for professional monitoring */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: white; padding: 20px; margin: 0; min-height: 100vh; display: flex; flex-direction: column; transition: direction 0.3s ease; }
+        
+        /* [TOP NAVIGATION] UI Language switcher and small logo */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        [dir="rtl"] .top-nav { flex-direction: row-reverse; }
+        #uiLangSelect { padding: 6px 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; font-size: 13px; outline: none; }
+
+        /* [HEADER SECTION] Server status and IP details */
+        .header-info { background: #1e293b; padding: 20px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #334155; }
+        .title-area h1 { margin: 0; font-size: 24px; letter-spacing: -0.5px; color: #f8fafc; }
+        .title-area p { margin: 5px 0 15px 0; font-size: 13px; color: #94a3b8; }
+
+        /* [THREE-COLUMN LAYOUT] Left: Listener QR | Center: URL Box | Right: Admin QR */
+        .connection-container { display: flex; align-items: center; gap: 15px; }
+        [dir="rtl"] .connection-container { flex-direction: row-reverse; }
+
+        .qr-section { text-align: center; flex-shrink: 0; }
+        .qr-box { background: white; padding: 8px; border-radius: 10px; display: inline-block; }
+        .qr-box canvas, .qr-box img { width: 90px !important; height: 90px !important; }
+        .qr-label { display: block; font-size: 10px; color: #94a3b8; margin-top: 4px; font-weight: bold; }
+        
+        /* Center URL Box */
+        .url-details { flex-grow: 1; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; }
+        .url-item { margin-bottom: 10px; font-family: 'SFMono-Regular', Consolas, monospace; }
+        .url-item:last-child { margin-bottom: 0; }
+        .url-tag { font-size: 11px; font-weight: bold; color: #64748b; display: block; margin-bottom: 2px; }
+        .url-link { font-size: 13px; word-break: break-all; text-decoration: none; transition: 0.2s; }
+        .url-link:hover { text-decoration: underline; }
+
+        /* [CHANNEL GRID] Responsive cards for active broadcast channels */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; flex-grow: 1; }
+        .card { background: #1e293b; padding: 20px; border-radius: 20px; border: 2px solid #334155; text-align: center; transition: 0.3s; }
+        .card.online { border-color: #10b981; background: radial-gradient(circle at top right, #1e293b, #0f172a); }
+        
+        .lang-label { font-size: 16px; color: #f1f5f9; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .count { font-size: 56px; font-weight: 800; color: #10b981; line-height: 1; margin: 10px 0; }
+        .listener-text { font-size: 12px; color: #64748b; margin-bottom: 15px; }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; background: #334155; color: #94a3b8; }
+        .online .badge { background: #059669; color: white; }
+
+        /* [AUDIO VISUALIZATION] Volume bars for monitoring activity */
+        .bgm-info { font-size: 11px; color: #818cf8; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .vol-container { width: 100%; height: 10px; background: #334155; border-radius: 5px; margin-top: 15px; overflow: hidden; }
+        .vol-bar { width: 100%; height: 100%; background: #10b981; transform: scaleX(0); transform-origin: left; transition: transform 0.1s linear; }
+        [dir="rtl"] .vol-bar { transform-origin: right; }
+
+        footer { margin-top: 30px; padding: 20px 0; border-top: 1px solid #1e293b; text-align: center; font-size: 12px; color: #475569; }
+        footer a { color: #64748b; text-decoration: underline; transition: color 0.2s; }
+        footer a:hover { color: #94a3b8; }
+
+        /* [ANIMATIONS] Blink effect for playing music */
+        @keyframes blink { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        .bgm-icon { animation: blink 1s infinite; }
+        .empty-msg { color: #64748b; font-style: italic; grid-column: 1/-1; text-align: center; padding: 40px; }
+    </style>
+</head>
+<body>
+    
+    <div class="top-nav">
+        <div id="ui-title-small" style="font-weight: bold; color: #60a5fa; font-size: 14px;">LIVE MONITOR</div>
+        <select id="uiLangSelect" onchange="updateUILanguage(this.value)">
+            <!-- Asia-Pacific & Core Languages -->
+            <option value="en">🇺🇸 English</option>
+            <option value="zh">🇭🇰 繁體中文</option>
+            <option value="zs">🇨🇳 简体中文</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="ar">🇸🇦 العربية</option>
+        </select>
+    </div>
+
+    <div class="header-info">
+        <div class="title-area">
+            <h1 id="ui-title">System Monitor</h1>
+            <p id="ui-subtitle">Server running on Local Network (No Internet Required)</p>
+        </div>
+
+        <!-- Three-column layout: Left QR | Center URL Box | Right QR -->
+        <div class="connection-container">
+            <!-- Left: Listener QR -->
+            <div class="qr-section">
+                <div class="qr-box"><div id="qrIndex"></div></div>
+                <span class="qr-label" id="ui-label-listener">Listener</span>
+            </div>
+
+            <!-- Center: URL Box -->
+            <div class="url-details" id="serverIP">
+            </div>
+
+            <!-- Right: Admin QR -->
+            <div class="qr-section">
+                <div class="qr-box"><div id="qrAdmin"></div></div>
+                <span class="qr-label" id="ui-label-admin">Admin</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="monitorGrid" class="grid"></div>
+
+    <footer>
+        &copy; 2026 Live Interpretation System | Powered by <a href="https://media.song4kids.com" target="_blank">media.song4kids.com</a>
+    </footer>
+
+    <script>
+        const socket = io();
+        let currentUI = 'en';
+
+        /* [I18N] Monitoring UI Translations */
+        const i18n = {
+            en: { title: "System Monitor", subtitle: "Local Network (No Internet Required)", listener: "Listener", admin: "Admin", live: "● ADMIN LIVE", listeners: "Current Listeners", noChannel: "No active channels. Waiting for Admins...", bgm: "BGM: " },
+            zh: { title: "系統監控儀表板", subtitle: "伺服器運行於區域網路 (不需外部網路)", listener: "聽眾端", admin: "管理後台", live: "● 直播中", listeners: "目前聽眾人數", noChannel: "目前沒有活動中的頻道...", bgm: "背景音樂: " },
+            zs: { title: "系统监控仪表板", subtitle: "服务器运行于局域网 (不需要外部网络)", listener: "听众端", admin: "管理后台", live: "● 直播中", listeners: "目前听众人数", noChannel: "目前没有活动中的频道...", bgm: "背景音乐: " },
+            ja: { title: "システム監視パネル", subtitle: "ローカルネットワークで稼働中", listener: "リスナー", admin: "管理用", live: "● 配信中", listeners: "現在のリスナー数", noChannel: "配信開始を待機中...", bgm: "BGM: " },
+            ko: { title: "시스템 모니터링", subtitle: "로컬 네트워크에서 실행 중", listener: "청취자", admin: "관리자", live: "● 라이브 중", listeners: "현재 청취자 수", noChannel: "활성 채널이 없습니다...", bgm: "배경음악: " },
+            es: { title: "Monitor del Sistema", subtitle: "Red local (Sin internet requerido)", listener: "Oyente", admin: "Admin", live: "● TRANSMITIENDO", listeners: "Oyentes actuales", noChannel: "No hay canales activos. Esperando administradores...", bgm: "Música: " },
+            fr: { title: "Moniteur du Système", subtitle: "Réseau local (Internet non requis)", listener: "Auditeur", admin: "Admin", live: "● EN DIRECT", listeners: "Auditeurs actuels", noChannel: "Aucun canal actif. En attente des administrateurs...", bgm: "Musique: " },
+            ar: { title: "مراقب النظام", subtitle: "الشبكة المحلية (لا توجد حاجة للإنترنت)", listener: "المستمع", admin: "المسؤول", live: "● بث مباشر", listeners: "المستمعون الحاليون", noChannel: "لا توجد قنوات نشطة. في انتظار المسؤولين...", bgm: "الموسيقى: " }
+        };
+
+        /* [UI] Function to switch monitor interface language and handle RTL */
+        function updateUILanguage(lang) {
+            currentUI = lang;
+            const d = i18n[lang] || i18n['en'];
+            const body = document.body;
+
+            if (lang === 'ar') {
+                body.setAttribute('dir', 'rtl');
+            } else {
+                body.setAttribute('dir', 'ltr');
+            }
+
+            document.getElementById('ui-title').innerText = d.title;
+            document.getElementById('ui-subtitle').innerText = d.subtitle;
+            document.getElementById('ui-label-listener').innerText = d.listener;
+            document.getElementById('ui-label-admin').innerText = d.admin;
+            socket.emit('get-stats'); 
+        }
+
+        /* [NETWORK INFO] Handle IP auto-detection and QR generation with 3-column layout */
+        socket.on('server-info', (data) => {
+            const serverIP = document.getElementById('serverIP');
+            serverIP.innerHTML = `
+                <div class="url-item">
+                    <span class="url-tag">LISTEN (CLIENT)</span>
+                    <a href="${data.indexUrl}" target="_blank" class="url-link" style="color: #10b981;">${data.indexUrl} ↗</a>
+                </div>
+                <div class="url-item">
+                    <span class="url-tag">ADMIN (CONSOLE)</span>
+                    <a href="${data.adminUrl}" target="_blank" class="url-link" style="color: #60a5fa;">${data.adminUrl} ↗</a>
+                </div>
+            `;
+            // Clear and regenerate QR Codes
+            document.getElementById('qrIndex').innerHTML = '';
+            document.getElementById('qrAdmin').innerHTML = '';
+            new QRCode(document.getElementById("qrIndex"), { text: data.indexUrl, width: 90, height: 90 });
+            new QRCode(document.getElementById("qrAdmin"), { text: data.adminUrl, width: 90, height: 90 });
+        });
+
+        /* [STATS ENGINE] Main logic for rendering active channel cards */
+        socket.on('update-stats', (data) => {
+            const grid = document.getElementById('monitorGrid');
+            const d = i18n[currentUI] || i18n['en'];
+            grid.innerHTML = '';
+            
+            data.channels.forEach(lang => {
+                const count = data.stats[lang] || 0;
+                const bgmStatus = data.bgms ? data.bgms[lang] : null;
+                const isPlaying = bgmStatus && bgmStatus.isPlaying;
+                const fileName = (bgmStatus && bgmStatus.fileName) ? bgmStatus.fileName : "";
+
+                const card = document.createElement('div');
+                card.className = 'card online';
+                card.innerHTML = `
+                    <div class="lang-label">
+                        ${lang} <span id="bgm-icon-${lang}" class="bgm-icon" style="display: ${isPlaying ? 'inline' : 'none'}">🎵</span>
+                    </div>
+                    <div class="badge">${d.live}</div>
+                    <div class="count">${count}</div>
+                    <div class="listener-text">${d.listeners}</div>
+                    <div id="bgm-info-${lang}" class="bgm-info" style="display: ${isPlaying ? 'block' : 'none'}">
+                        ${d.bgm}${fileName}
+                    </div>
+                    <div class="vol-container">
+                        <div id="bar-${lang}" class="vol-bar"></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (data.channels.length === 0) {
+                grid.innerHTML = `<div class="empty-msg">${d.noChannel}</div>`;
+            }
+        });
+
+        /* [REAL-TIME VOLUME] Receive VU meter data from Admin via Server */
+        socket.on('monitor-vol-display', (data) => {
+            const bar = document.getElementById(`bar-${data.lang}`);
+            if (bar) {
+                const scale = Math.min(data.vol / 100, 1);
+                bar.style.transform = `scaleX(${scale})`;
+            }
+        });
+
+        /* [BGM STATUS] Receive music playback status updates */
+        socket.on('monitor-bgm-display', (data) => {
+            const icon = document.getElementById(`bgm-icon-${data.lang}`);
+            const info = document.getElementById(`bgm-info-${data.lang}`);
+            const d = i18n[currentUI] || i18n['en'];
+            if (icon && info) {
+                if (data.isPlaying) {
+                    icon.style.display = 'inline';
+                    info.style.display = 'block';
+                    info.innerText = `${d.bgm}${data.fileName || ""}`;
+                } else {
+                    icon.style.display = 'none';
+                    info.style.display = 'none';
+                }
+            }
+        });
+
+        // Request initial server data and stats
+        socket.emit('get-stats');
+    </script>
+</body>
+</html>

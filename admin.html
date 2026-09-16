@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Console | Professional Broadcast</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* [UI STYLING] Professional Management Interface */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; padding: 15px; display: flex; justify-content: center; margin: 0; transition: direction 0.3s ease; }
+        .card { background: white; width: 100%; max-width: 480px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .top-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        #uiLangSelect { padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff; cursor: pointer; width: auto; }
+        .header { border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 10px; }
+        .header h2 { margin: 0; font-size: 22px; color: #1e293b; }
+        .header p { margin: 5px 0 0; font-size: 12px; color: #94a3b8; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #475569; }
+        select, button, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 15px; margin-bottom: 15px; box-sizing: border-box; -webkit-appearance: none; }
+        
+        /* [MIXER UI] Audio control group */
+        .mixer-group { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        .mixer-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .mixer-row span { font-size: 13px; width: 110px; color: #64748b; flex-shrink: 0; }
+        [dir="rtl"] .mixer-row { flex-direction: row-reverse; }
+        input[type="range"] { flex-grow: 1; margin: 0; cursor: pointer; height: 6px; background: #cbd5e1; border-radius: 5px; border: none; }
+        
+        /* [BUTTON STATES] Color coding for actions */
+        #startBtn { background: #059669; color: white; border: none; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; margin-top: 10px; }
+        #startBtn.stop { background: #dc2626; }
+        #startBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #bgmBtn { background: #6366f1; color: white; border: none; cursor: pointer; font-weight: 500; transition: 0.3s; }
+        #bgmBtn.active { background: #4f46e5; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        
+        /* [MONITORING] Stats and meters */
+        .status-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; min-height: 28px; }
+        [dir="rtl"] .status-container { flex-direction: row-reverse; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #e2e8f0; color: #475569; }
+        .listener-count { font-size: 12px; font-weight: bold; color: #10b981; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; border: 1px solid #10b981; }
+        .meter-bg { width: 100%; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 20px; }
+        #fill { width: 0%; height: 100%; background: #10b981; transition: width 0.1s; } 
+        [dir="rtl"] #fill { float: right; }
+        
+        .init-btn { background: #1e293b; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; width: 100%; font-weight: bold; }
+        .instructions { background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 12px; margin-top: 10px; }
+        .instructions h4 { margin: 0 0 10px 0; font-size: 14px; color: #92400e; display: flex; align-items: center; gap: 6px; }
+        .instructions ul { margin: 0; padding-left: 20px; font-size: 13px; color: #b45309; line-height: 1.6; text-align: left; }
+        [dir="rtl"] .instructions ul { padding-left: 0; padding-right: 20px; text-align: right; }
+
+        footer { margin-top: 25px; padding-top: 15px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; color: #94a3b8; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="top-bar">
+        <select id="uiLangSelect" onchange="changeUILanguage(this.value)">
+            <option value="zh">🇭🇰 繁體中文</option>
+            <option value="zs">🇨🇳 简体中文</option>
+            <option value="en" selected>🇬🇧 English</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+            <option value="tl">🇵🇭 Filipino</option>
+            <option value="th">🇹🇭 ไทย</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="my">🇲🇲 မြန်မာဘာသာ (Burmese)</option>
+            <option value="ms">🇲🇾 Bahasa Melayu (Malay)</option>
+            <option value="km">🇰🇭 ភាសាខ្មែរ (Khmer)</option>
+            <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+            <option value="mn">🇲🇳 Монгол хэл (Mongolian)</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+        </select>
+    </div>
+
+    <div class="header">
+        <h2 id="ui-main-title">Interpretation Console</h2>
+        <p id="ui-sub-title">Professional Live Broadcast System</p>
+    </div>
+
+    <button id="initBtn" class="init-btn" onclick="requestMicPermission()">🔑 START SYSTEM & ENABLE DEVICES</button>
+
+    <label id="ui-label-1">1. Language Name (Label)</label>
+    <input type="text" id="langName" value="English">
+
+    <label id="ui-label-2">2. Select Audio Input (Mic)</label>
+    <select id="deviceSelect"><option value="">Please start system first</option></select>
+
+    <div class="mixer-group">
+        <label id="ui-label-mixer">🎚 Audio Mixer</label>
+        <div class="mixer-row"><span id="ui-span-mic">🎤 Interpreter</span><input type="range" id="micVol" min="0" max="1.5" step="0.1" value="1.0"></div>
+        <div class="mixer-row"><span id="ui-span-bgm">🎵 Background Music</span><input type="range" id="bgmVol" min="0" max="1.0" step="0.1" value="0.4"></div>
+    </div>
+
+    <label id="ui-label-3">3. Server Warm-up Music (MP3)</label>
+    <select id="musicSelect"><option value="">-- Loading Music List... --</option></select>
+    <button id="bgmBtn" onclick="toggleBGM()">▶ Play Music</button>
+    
+    <div class="status-container">
+        <div id="statusBadge" class="status-badge">● SYSTEM INACTIVE</div>
+        <div id="listenerCount" class="listener-count" style="display:none;">0 Listeners</div>
+    </div>
+
+    <div class="meter-bg"><div id="fill"></div></div>
+    <button id="startBtn" onclick="toggleBroadcast()" disabled>START BROADCAST</button>
+
+    <div class="instructions">
+        <h4 id="ui-guide-title">⚠️ Operational Guidelines</h4>
+        <ul id="ui-guide-list"></ul>
+    </div>
+
+    <footer>
+        &copy; 2026 Live Interpretation System | Powered by <a href="https://media.song4kids.com" target="_blank" style="color: inherit; text-decoration: underline;">media.song4kids.com</a>
+    </footer>
+</div>
+
+<script>
+    /* [GLOBAL STATE] Management of WebRTC and Audio Context */
+    const socket = io();
+    let localStream, micStream, isBroadcasting = false, peers = {};
+    let audioCtx, micSource, bgmBufferSource, mixedDest, micGain, bgmGain;
+    let cachedAudioBuffer = null;
+    let currentUI = "en";
+
+    /* [I18N DICTIONARY] Translation for all admin UI elements & Default Language Names */
+    const i18n = {
+        en: { title: "Interpretation Console", sub: "Professional Live Broadcast System", init: "🔑 START SYSTEM & ENABLE DEVICES", label1: "1. Language Name (Label)", label2: "2. Select Audio Input (Mic)", opt_init: "Please start system first", mixer: "🎚 Audio Mixer", mic: "🎤 Interpreter", bgm: "🎵 Background Music", label3: "3. Preload Music (MP3)", bgmBtn: "▶ Play Music", bgmBtnPause: "⏸ Stop Music", start: "START BROADCAST", stop: "STOP BROADCAST", statusInactive: "● SYSTEM INACTIVE", statusReady: "● READY", statusLive: "🔴 LIVE: ", statusStopped: "● STOPPED", listeners: " Listeners", guideTitle: "⚠️ Operational Guidelines", guides: ["Connect to event WiFi", "Use headphones to prevent echo", "Ensure green meter moves when speaking", "Do not refresh tab during broadcast"], alertLang: "Please enter language name", alertBgmFile: "Please select an MP3 file", alertInit: "Please click start button first", defaultLang: "English" },
+        zh: { title: "傳譯管理控制台", sub: "專業實時廣播系統", init: "🔑 啟動系統並啟用裝置", label1: "1. 語言名稱 (標籤)", label2: "2. 選擇音訊輸入 (麥克風)", opt_init: "請先啟動系統", mixer: "🎚 混音器", mic: "🎤 傳譯員", bgm: "🎵 背景音樂", label3: "3. 預載音樂 (MP3)", bgmBtn: "▶ 播放音樂", bgmBtnPause: "⏸ 停止音樂", start: "開始廣播", stop: "停止廣播", statusInactive: "● 系統未就緒", statusReady: "● 系統已就緒", statusLive: "🔴 直播中: ", statusStopped: "● 已停止", listeners: " 位聽眾", guideTitle: "⚠️ 操作指引", guides: ["請連接現場指定 WiFi", "請使用耳機以防止回音", "確保說話時音量條有跳動", "廣播期間請勿刷新網頁"], alertLang: "請輸入語言名稱", alertBgmFile: "請選擇 MP3 檔案", alertInit: "請先點擊啟動按鈕", defaultLang: "粵語" },
+        zs: { title: "传译管理控制台", sub: "专业实时广播系统", init: "🔑 启动系统并启用设备", label1: "1. 语言名称 (标签)", label2: "2. 选择音频输入 (麦克风)", opt_init: "请先启动系统", mixer: "🎚 混音器", mic: "🎤 传译员", bgm: "🎵 背景音乐", label3: "3. 预载音乐 (MP3)", bgmBtn: "▶ 播放音乐", bgmBtnPause: "⏸ 停止音乐", start: "开始广播", stop: "停止广播", statusInactive: "● 系统未就绪", statusReady: "● 系统已就绪", statusLive: "🔴 直播中: ", statusStopped: "● 已停止", listeners: " 位听众", guideTitle: "⚠️ 操作指引", guides: ["请连接现场指定 WiFi", "请使用耳机以防止回音", "确保说话时音量条有跳动", "广播期间请勿刷新网页"], alertLang: "请输入语言名称", alertBgmFile: "请选择 MP3 文件", alertInit: "请先点击启动按钮", defaultLang: "普通话" },
+        ko: { title: "통역 관리 콘솔", sub: "전문 실시간 방송 시스템", init: "🔑 시스템 시작 및 장치 활성화", label1: "1. 언어 이름 (라벨)", label2: "2. 오디오 입력 선택 (마이크)", opt_init: "먼저 시스템을 시작하세요", mixer: "🎚 오디오 믹서", mic: "🎤 통역사", bgm: "🎵 배경 음악", label3: "3. 음악 불러오기 (MP3)", bgmBtn: "▶ 음악 재생", bgmBtnPause: "⏸ 재생 중지", start: "방송 시작", stop: "방송 중지", statusInactive: "● 시스템 비활성", statusReady: "● 준비 완료", statusLive: "🔴 라이브: ", statusStopped: "● 중단됨", listeners: " 명의 청취자", guideTitle: "⚠️ 조작 가이드", guides: ["지정된 WiFi에 연결하세요", "에코 방지를 위해 헤드셋 사용", "말할 때 볼륨 바가 움직이는지 확인", "방송 중 페이지를 새로고침하지 마세요"], alertLang: "언어 이름을 입력하세요", alertBgmFile: "MP3 파일을 선택하세요", alertInit: "시작 버튼을 먼저 누르세요", defaultLang: "한국어" },
+        ja: { title: "通訳管理コンソール", sub: "プロフェッショナル配信システム", init: "🔑 システム起動・デバイス有効化", label1: "1. 言語名 (ラベル)", label2: "2. 入力デバイス選擇 (マイク)", opt_init: "最初にシステムを起動してください", mixer: "🎚 ミキサー", mic: "🎤 通訳者", bgm: "🎵 BGM", label3: "3. 音楽の読み込み (MP3)", bgmBtn: "▶ 再生", bgmBtnPause: "⏸ 停止", start: "配信開始", stop: "配信停止", statusInactive: "● 未稼働", statusReady: "● 準備完了", statusLive: "🔴 ライブ配信中: ", statusStopped: "● 停止中", listeners: " 人の視聴者", guideTitle: "⚠️ 操作ガイド", guides: ["専用のWiFiに接続してください", "ハウリング防止のためヘッドホンを使用", "發声時にメーターが動くか確認", "配信中にページを更新しないでください"], alertLang: "言語名を入力してください", alertBgmFile: "MP3ファイルを選択してください", alertInit: "最初に上のボタンを押してください", defaultLang: "日本語" },
+        id: { title: "Konsol Interpretasi", sub: "Sistem Siaran Langsung Profesional", init: "🔑 MULAI SISTEM", label1: "1. Nama Bahasa", label2: "2. Pilih Mikrofon", opt_init: "Mulai sistem terlebih dahulu", mixer: "🎚 Mixer Audio", mic: "🎤 Interpreter", bgm: "🎵 Musik Latar", label3: "3. Musik Pemanasan", bgmBtn: "▶ Putar Musik", bgmBtnPause: "⏸ Berhenti", start: "MULAI SIARAN", stop: "BERHENTI", statusInactive: "● SISTEM NONAKTIF", statusReady: "● SIAP", statusLive: "🔴 LIVE: ", statusStopped: "● BERHENTI", listeners: " Pendengar", guideTitle: "⚠️ Panduan Operasional", guides: ["Hubungkan ke WiFi acara", "Gunakan headset", "Pastikan meteran bergerak", "Jangan segarkan halaman"], alertLang: "Masukkan nama bahasa", alertBgmFile: "Pilih file MP3", alertInit: "Klik tombol mulai", defaultLang: "Bahasa Indonesia" },
+        tl: { title: "Interpretasyon Console", sub: "Propesyonal na Broadcast System", init: "🔑 SIMULAN ANG SYSTEM", label1: "1. Pangalan ng Wika", label2: "2. Pumili ng Mic", opt_init: "Simulan muna ang system", mixer: "🎚 Audio Mixer", mic: "🎤 Tagasalin", bgm: "🎵 Background Music", label3: "3. Warm-up Music", bgmBtn: "▶ I-play", bgmBtnPause: "⏸ I-stop", start: "SIMULAN ANG BROADCAST", stop: "ITIGIL ANG BROADCAST", statusInactive: "● HINDI AKTIBO", statusReady: "● HANDA NA", statusLive: "🔴 LIVE: ", statusStopped: "● ITINIGIL", listeners: " Mga Nakikinig", guideTitle: "⚠️ Gabay sa Operasyon", guides: ["Kumonekta sa WiFi ng venue", "Gumamit ng headphones", "Tiyaking gumagalaw ang meter", "Huwag i-refresh ang page"], alertLang: "Ilagay ang wika", alertBgmFile: "Pumili ng MP3", alertInit: "I-click ang simulan", defaultLang: "Filipino" },
+        th: { title: "แผงควบคุมการล่าม", sub: "ระบบถ่ายทอดสดระดับมืออาชีพ", init: "🔑 เริ่มระบบและเปิดใช้งานอุปกรณ์", label1: "1. ชื่อภาษา", label2: "2. เลือกไมโครโฟน", opt_init: "กรุณาเริ่มระบบก่อน", mixer: "🎚 มิกเซอร์เสียง", mic: "🎤 ล่าม", bgm: "🎵 เพลงประกอบ", label3: "3. เพลงวอร์มอัพ (MP3)", bgmBtn: "▶ เล่นเพลง", bgmBtnPause: "⏸ หยุดเพลง", start: "เริ่มการถ่ายทอด", stop: "หยุดการถ่ายทอด", statusInactive: "● ระบบไม่พร้อม", statusReady: "● พร้อมใช้งาน", statusLive: "🔴 กำลังถ่ายทอด: ", statusStopped: "● หยุดแล้ว", listeners: " ผู้ฟัง", guideTitle: "⚠️ คำแนะนำการใช้งาน", guides: ["เชื่อมต่อ Wi-Fi ของงาน", "ใช้หูฟังเพื่อป้องกันเสียงสะท้อน", "ตรวจสอบให้แน่ใจว่าแถบเสียงขยับ", "อย่ารีเฟรชหน้าขณะถ่ายทอด"], alertLang: "กรุณาระบุชื่อภาษา", alertBgmFile: "กรุณาเลือกไฟล์ MP3", alertInit: "กรุณากดปุ่มเริ่มระบบก่อน", defaultLang: "ไทย" },
+        vi: { title: "Bảng điều khiển thông dịch", sub: "Hệ thống phát sóng chuyên nghiệp", init: "🔑 KHỞI ĐỘNG HỆ THỐNG", label1: "1. Tên ngôn ngữ", label2: "2. Chọn Microphone", opt_init: "Vui lòng khởi động hệ thống trước", mixer: "🎚 Bộ trộn âm thanh", mic: "🎤 Thông dịch viên", bgm: "🎵 Nhạc nền", label3: "3. Nhạc khởi động (MP3)", bgmBtn: "▶ Phát nhạc", bgmBtnPause: "⏸ Dừng nhạc", start: "BẮT ĐẦU PHÁT", stop: "DỪNG PHÁT", statusInactive: "● KHÔNG HOẠT ĐỘNG", statusReady: "● SẴN SÀNG", statusLive: "🔴 TRỰC TIẾP: ", statusStopped: "● ĐÃ DỪNG", listeners: " Người nghe", guideTitle: "⚠️ Hướng dẫn vận hành", guides: ["Kết nối Wi-Fi sự kiện", "Sử dụng tai nghe", "Đảm bảo thanh âm lượng nhảy", "Không tải lại trang khi phát"], alertLang: "Vui lòng nhập tên ngôn ngữ", alertBgmFile: "Chọn tệp MP3", alertInit: "Bấm nút khởi động trước", defaultLang: "Tiếng Việt" },
+        my: { title: "ဘာသာပြန်ဆိုချက် ကွန်ဆိုးလ်", subtitle: "ပရော်ဖက်ရှင်နယ် လွှင့်တင်ရေးစနစ်", init: "🔑 စနစ်စတင်ရန်", label1: "1. ဘာသာစကားအမည်", label2: "2. မိုက်ခရိုဖုန်း ရွေးချယ်ရန်", opt_init: "စနစ်ကို အရင်စတင်ပါ", mixer: "🎚 အသံမစ်ဆာ", mic: "🎤 ဘာသာပြန်ဆိုသူ", bgm: "🎵 နောက်ခံတေးဂီတ", label3: "3. ကြိုတင်ဖွင့်ရန် တေးဂီတ (MP3)", bgmBtn: "▶ တေးဂီတဖွင့်မည်", bgmBtnPause: "⏸ ရပ်တန့်မည်", start: "ထုတ်လွှင့်မှု စတင်မည်", stop: "ထုတ်လွှင့်မှု ရပ်မည်", statusInactive: "● စနစ်မလုပ်ဆောင်ပါ", statusReady: "● အဆင်သင့်ဖြစ်ပါပြီ", statusLive: "🔴 တိုက်ရိုက်: ", statusStopped: "● ရပ်တန့်", listeners: " ဦးရေ နားဆင်နေသည်", guideTitle: "⚠️ လမ်းညွှန်ချက်များ", guides: ["ပွဲ Wi-Fi သို့ ချိတ်ဆက်ပါ", "အသံပဲ့ခြင်းမှ ကာကွယ်ရန် နားကြပ်သုံးပါ", "ပြောဆိုစဉ် အသံမီတာ လှုပ်ရှားမှုကို စစ်ဆေးပါ", "ထုတ်လွှင့်စဉ် စာမျက်နှာကို မဆန်းသစ်ပါနှင့်"], alertLang: "ဘာသာစကားအမည် ထည့်ပါ", alertBgmFile: "MP3 ဖိုင်ကို ရွေးပါ", alertInit: "စတင်ခလုတ်ကို အရင်နှိပ်ပါ", defaultLang: "မြန်မာ" },
+        ms: { title: "Konsol Terjemahan", sub: "Sistem Siaran Langsung Profesional", init: "🔑 MULAI SISTEM", label1: "1. Nama Bahasa", label2: "2. Pilih Mikrofon", opt_init: "Mula sistem dahulu", mixer: "🎚 Pengadun Audio", mic: "🎤 Penterjemah", bgm: "🎵 Muzik Latar", label3: "3. Muzik Prapemuatan (MP3)", bgmBtn: "▶ Main Muzik", bgmBtnPause: "⏸ Berhenti Muzik", start: "MULAI SIARAN", stop: "BERHENTI SIARAN", statusInactive: "● SISTEM TIDAK AKTIF", statusReady: "● SIAP", statusLive: "🔴 LANGSUNG: ", statusStopped: "● BERHENTI", listeners: " Pendengar", guideTitle: "⚠️ Garis Panduan Operasi", guides: ["Sambung ke Wi-Fi acara", "Gunakan fon kepala untuk elakkan gema", "Pastikan meter hijau bergerak semasa bercakap", "Jangan muat semula halaman semasa siaran"], alertLang: "Sila masukkan nama bahasa", alertBgmFile: "Sila pilih fail MP3", alertInit: "Sila klik butang mula dahulu", defaultLang: "Melayu" },
+        km: { title: "កុងសូលបកប្រែ", sub: "ប្រព័ន្ធផ្សាយផ្ទាល់អាជីព", init: "🔑 ចាប់ផ្តើមប្រព័ន្ធ", label1: "1. ឈ្មោះភាសា", label2: "2. ជ្រើសរើសមីក្រូហ្វូន", opt_init: "សូមចាប់ផ្តើមប្រព័ន្ធជាមុនសិន", mixer: "🎚 កម្រិតសំឡេង", mic: "🎤 អ្នកបកប្រែ", bgm: "🎵 តន្ត្រីផ្ទៃខាងក្រោយ", label3: "3. តន្ត្រីវគ្គផ្ដាច់ព្រ័ត្រ (MP3)", bgmBtn: "▶ ចាក់តន្ត្រី", bgmBtnPause: "⏸ ឈប់តន្ត្រី", start: "ចាប់ផ្តើមផ្សាយ", stop: "បញ្ឈប់ការផ្សាយ", statusInactive: "● ប្រព័ន្ធមិនដំណើរការ", statusReady: "● រួចរាល់", statusLive: "🔴 ផ្សាយផ្ទាល់៖ ", statusStopped: "● បានបញ្ឈប់", listeners: " អ្នកស្តាប់", guideTitle: "⚠️ ការណែនាំក្នុងការប្រតិបត្តិ", guides: ["តភ្ជាប់ទៅ Wi-Fi ព្រឹត្តិការណ៍", "ប្រើកាសដើម្បីការពារសំឡេងរ้อง", "ធានាថាម៉ែត្រពណ៌បៃតងផ្លាស់ទីពេលនិយាយ", "កុំ ರಿហ្រ្វេសទំព័រពេលកំពុងផ្សាយ"], alertLang: "សូមបញ្ចូលឈ្មោះភាសា", alertBgmFile: "សូមជ្រើសរើសឯកសារ MP3", alertInit: "សូមចុចប៊ូតុងចាប់ផ្តើមជាមុនសិន", defaultLang: "ខ្មែរ" },
+        hi: { title: "अनुवाद कंसोल", sub: "व्यावसायिक लाइव प्रसारण प्रणाली", init: "🔑 सिस्टम शुरू करें और डिवाइस सक्षम करें", label1: "1. भाषा का नाम (लेबल)", label2: "2. ऑडियो इनपुट (माइक) चुनें", opt_init: "कृपया पहले सिस्टम शुरू करें", mixer: "🎚 ऑडियो मिक्सर", mic: "🎤 दुभाषिया", bgm: "🎵 पृष्ठभूमि संगीत", label3: "3. प्रीलोड संगीत (MP3)", bgmBtn: "▶ संगीत चलाएं", bgmBtnPause: "⏸ संगीत रोकें", start: "प्रसारण शुरू करें", stop: "प्रसारण रोकें", statusInactive: "● सिस्टम निष्क्रिय", statusReady: "● तैयार", statusLive: "🔴 लाइव: ", statusStopped: "● रुका हुआ", listeners: " श्रोता", guideTitle: "⚠️ परिचालन दिशा-निर्देश", guides: ["इवेंट वाई-फाई से कनेक्ट करें", "इको से बचने के लिए हेडफोन का उपयोग करें", "सुनिश्चित करें कि बोलते समय मीटर चले", "प्रसारण के दौरान टैब रीफ्रेश न करें"], alertLang: "कृपया भाषा का नाम दर्ज करें", alertBgmFile: "कृपया एक MP3 फ़ाइल चुनें", alertInit: "कृपया पहले स्टार्ट बटन पर क्लिक करें", defaultLang: "हिन्दी" },
+        mn: { title: "Орчуулгын систем", sub: "Мэргэжлийн шууд дамжуулалт", init: "🔑 СИСТЕМ ЭХЛҮҮЛЭХ", label1: "1. Хэлний нэр", label2: "2. Микрофон сонгох", opt_init: "Эхлээд системээ эхлүүлнэ үү", mixer: "🎚 Аудио холигч", mic: "🎤 Орчуулагч", bgm: "🎵 Ар талын хөгжим", label3: "3. Хөгжим бэлтгэх (MP3)", bgmBtn: "▶ Хөгжим тоглуулах", bgmBtnPause: "⏸ Зогсоох", start: "ДАМЖУУЛАЛТ ЭХЛЭХ", stop: "ЗОГСООХ", statusInactive: "● СИСТЕМ ИДЭВХГҮЙ", statusReady: "● БЭЛЭН", statusLive: "🔴 ШУУД: ", statusStopped: "● ЗОГССОН", listeners: " Сонсогч", guideTitle: "⚠️ Ашиглах заавар", guides: ["Арга хэмжээний Wi-Fi-д холбогдох", "Дуу давхардахаас сэргийлж чихэвч хэрэглэх", "Ярих үед метр хөдөлж байгаа эсэхийг шалгах", "Дамжуулалтын үед хуудсыг шинэчлэхгүй байх"], alertLang: "Хэлний нэр оруулна уу", alertBgmFile: "MP3 файл сонгоно уу", alertInit: "Эхлээд эхлүүлэх товчийг дарна уу", defaultLang: "Монгол" },
+        de: { title: "Dolmetscher-Konsole", sub: "Professionelles Live-Broadcast-System", init: "🔑 SYSTEM STARTEN", label1: "1. Sprachname (Label)", label2: "2. Audio-Eingang (Mikrofon)", opt_init: "Bitte zuerst System starten", mixer: "🎚 Audiomixer", mic: "🎤 Dolmetscher", bgm: "🎵 Hintergrundmusik", label3: "3. Musik vorladen (MP3)", bgmBtn: "▶ Musik abspielen", bgmBtnPause: "⏸ Musik stoppen", start: "ÜBERTRAGUNG STARTEN", stop: "STOPPEN", statusInactive: "● SYSTEM INAKTIV", statusReady: "● BEREIT", statusLive: "🔴 LIVE: ", statusStopped: "● GESTOPPT", listeners: " Zuhörer", guideTitle: "⚠️ Betriebshinweise", guides: ["Mit Event-WLAN verbinden", "Kopfhörer verwenden", "Achten Sie darauf, dass sich der Pegel bewegt", "Tab während der Übertragung nicht aktualisieren"], alertLang: "Bitte Sprachnamen eingeben", alertBgmFile: "Bitte MP3-Datei wählen", alertInit: "Bitte zuerst Start-Button drücken", defaultLang: "Deutsch" },
+        fr: { title: "Console d'Interprétation", sub: "Système de Diffusion en Direct", init: "🔑 DÉMARRER LE SYSTÈME", label1: "1. Nom de la langue", label2: "2. Sélectionner le micro", opt_init: "Veuillez démarrer le système", mixer: "🎚 Table de mixage", mic: "🎤 Interprète", bgm: "🎵 Musique de fond", label3: "3. Musique (MP3)", bgmBtn: "▶ Jouer la musique", bgmBtnPause: "⏸ Arrêter", start: "COMMENCER LA DIFFUSION", stop: "ARRÊTER", statusInactive: "● INACTIF", statusReady: "● PRÊT", statusLive: "🔴 EN DIRECT : ", statusStopped: "● ARRÊTÉ", listeners: " Auditeurs", guideTitle: "⚠️ Consignes", guides: ["Connectez-vous au Wi-Fi", "Utilisez un casque", "Vérifiez le mouvement du VU-mètre", "Ne pas rafraîchir la page"], alertLang: "Entrez le nom de la langue", alertBgmFile: "Sélectionnez un fichier MP3", alertInit: "Cliquez d'abord sur démarrer", defaultLang: "Français" },
+        es: { title: "Consola de Interpretación", sub: "Sistema de Transmisión en Vivo", init: "🔑 INICIAR SISTEMA", label1: "1. Nombre del idioma", label2: "2. Seleccionar micrófono", opt_init: "Inicie el sistema primero", mixer: "🎚 Mezclador de audio", mic: "🎤 Intérprete", bgm: "🎵 Música de fondo", label3: "3. Música (MP3)", bgmBtn: "▶ Reproducir música", bgmBtnPause: "⏸ Detener", start: "INICIAR TRANSMISIÓN", stop: "DETENER", statusInactive: "● INACTIVO", statusReady: "● LISTO", statusLive: "🔴 EN VIVO: ", statusStopped: "● DETENIDO", listeners: " Oyentes", guideTitle: "⚠️ Guía operativa", guides: ["Conéctese al Wi-Fi del evento", "Use auriculares", "Asegúrese de que el medidor se mueva", "No actualice la página"], alertLang: "Ingrese el nombre del idioma", alertBgmFile: "Seleccione un archivo MP3", alertInit: "Haga clic en iniciar primero", defaultLang: "Español" },
+        pt: { title: "Console de Interpretação", sub: "Sistema de Transmissão ao Vivo", init: "🔑 INICIAR SISTEMA", label1: "1. Nome do idioma", label2: "2. Selecionar microfone", opt_init: "Inicie o sistema primeiro", mixer: "🎚 Mixer de Áudio", mic: "🎤 Intérprete", bgm: "🎵 Música de fundo", label3: "3. Música (MP3)", bgmBtn: "▶ Tocar música", bgmBtnPause: "⏸ Parar", start: "INICIAR TRANSMISSÃO", stop: "PARAR", statusInactive: "● INATIVO", statusReady: "● PRONTO", statusLive: "🔴 AO VIVO: ", statusStopped: "● PARADO", listeners: " Ouvintes", guideTitle: "⚠️ Instruções", guides: ["Conecte-se ao Wi-Fi do evento", "Use fones de ouvido", "Garanta que o medidor se mova", "Não atualize a página"], alertLang: "Insira o nome do idioma", alertBgmFile: "Selecione um arquivo MP3", alertInit: "Clique no botão iniciar primeiro", defaultLang: "Português" },
+        ru: { title: "Консоль перевода", sub: "Система прямой трансляции", init: "🔑 ЗАПУСТИТЬ СИСТЕМУ", label1: "1. Название языка", label2: "2. Выберите микрофон", opt_init: "Сначала запустите систему", mixer: "🎚 Аудиомикшер", mic: "🎤 Переводчик", bgm: "🎵 Фоновая музыка", label3: "3. Музыка (MP3)", bgmBtn: "▶ Воспроизвести", bgmBtnPause: "⏸ Стоп", start: "НАЧАТЬ ТРАНСЛЯЦИЮ", stop: "ОСТАНОВИТЬ", statusInactive: "● НЕАКТИВНО", statusReady: "● ГОТОВО", statusLive: "🔴 ЭФИР: ", statusStopped: "● ОСТАНОВЛЕНО", listeners: " Слушателей", guideTitle: "⚠️ Руководство", guides: ["Подключитесь к Wi-Fi", "Используйте наушники", "Убедитесь, что индикатор движется", "Не обновляйте страницу"], alertLang: "Введите название языка", alertBgmFile: "Выберите файл MP3", alertInit: "Сначала нажмите кнопку запуска", defaultLang: "Русский" },
+        ar: { title: "لوحة تحكم الترجمة", sub: "نظام البث المباشر", init: "🔑 بدء النظام وتشغيل الأجهزة", label1: "1. اسم اللغة", label2: "2. اختر إدخال الصوت (الميكروفون)", opt_init: "يرجى بدء النظام أولاً", mixer: "🎚 مكسر الصوت", mic: "🎤 المترجم", bgm: "🎵 الموسيقى الخلفية", label3: "3. موسيقى الإحماء (MP3)", bgmBtn: "▶ تشغيل الموسيقى", bgmBtnPause: "⏸ إيقاف الموسيقى", start: "بدء البث", stop: "إيقاف البث", statusInactive: "● النظام غير متصل", statusReady: "● جاهز", statusLive: "🔴 مباشر: ", statusStopped: "● متوقف", listeners: " مستمعين", guideTitle: "⚠️ إرشادات التشغيل", guides: ["اتصل بشשת Wi-Fi المخصصة", "استخدم سماعات الأذن لمنع الصدى", "تأكد من حركة مؤشر الصوت", "لا تقم بتحديث الصفحة أثناء البث"], alertLang: "الرجاء إدخال اسم اللغة", alertBgmFile: "الرجاء اختيار ملف MP3", alertInit: "الرجاء النقر فوق زر البدء أولاً", defaultLang: "العربية" }
+    };
+
+    /* [UI HANDLER] Update all text components and auto-fill default language name */
+    function changeUILanguage(langCode) {
+        currentUI = langCode;
+        const d = i18n[langCode] || i18n['en'];
+        const body = document.body;
+        const topBar = document.querySelector('.top-bar');
+        const instructionLists = document.querySelectorAll('.instructions ul');
+
+        /* Handle Right-to-Left (RTL) for Arabic */
+        if (langCode === 'ar') {
+            body.setAttribute('dir', 'rtl');
+            topBar.style.justifyContent = 'flex-start';
+            instructionLists.forEach(el => el.style.textAlign = 'right');
+            document.getElementById('ui-guide-title').style.flexDirection = 'row-reverse';
+        } else {
+            body.setAttribute('dir', 'ltr');
+            topBar.style.justifyContent = 'flex-end';
+            instructionLists.forEach(el => el.style.textAlign = 'left');
+            document.getElementById('ui-guide-title').style.flexDirection = 'row';
+        }
+
+        document.getElementById('ui-main-title').innerText = d.title;
+        document.getElementById('ui-sub-title').innerText = d.sub;
+        document.getElementById('initBtn').innerText = d.init;
+        document.getElementById('ui-label-1').innerText = d.label1;
+        document.getElementById('ui-label-2').innerText = d.label2;
+        document.getElementById('ui-label-mixer').innerText = d.mixer;
+        document.getElementById('ui-span-mic').innerText = d.mic;
+        document.getElementById('ui-span-bgm').innerText = d.bgm;
+        document.getElementById('ui-label-3').innerText = d.label3;
+        document.getElementById('ui-guide-title').innerText = d.guideTitle;
+        const list = document.getElementById('ui-guide-list');
+        list.innerHTML = '';
+        (d.guides || []).forEach(g => { const li = document.createElement('li'); li.innerText = g; list.appendChild(li); });
+        
+        // Smart Default: Automatically update language label input if not actively broadcasting
+        if (!isBroadcasting && d.defaultLang) {
+            document.getElementById('langName').value = d.defaultLang;
+        }
+
+        updateButtonsAndStatus();
+    }
+
+    /* [BGM SYNC] Load music list from server */
+    async function fetchMusicList() {
+        try {
+            const response = await fetch('/api/music-list');
+            const files = await response.json();
+            const musicSelect = document.getElementById('musicSelect');
+            musicSelect.innerHTML = '<option value="">-- Select Music --</option>';
+            files.forEach(file => {
+                const opt = document.createElement('option');
+                opt.value = file;
+                opt.innerText = file;
+                musicSelect.appendChild(opt);
+            });
+        } catch (err) { console.error("Failed to load music list", err); }
+    }
+
+    /* [UI REFRESH] Logic for button colors and labels based on state */
+    function updateButtonsAndStatus() {
+        const d = i18n[currentUI] || i18n['en'];
+        const startBtn = document.getElementById('startBtn');
+        const bgmBtn = document.getElementById('bgmBtn');
+        const badge = document.getElementById('statusBadge');
+        const lang = document.getElementById('langName').value.trim();
+
+        if (isBroadcasting) {
+            startBtn.innerText = d.stop;
+            startBtn.classList.add('stop');
+            badge.innerText = d.statusLive + lang;
+        } else {
+            startBtn.innerText = d.start;
+            startBtn.classList.remove('stop');
+            badge.innerText = startBtn.disabled ? d.statusInactive : d.statusReady;
+        }
+
+        if (bgmBufferSource && bgmBufferSource.isPlaying) {
+            bgmBtn.innerText = d.bgmBtnPause;
+            bgmBtn.classList.add('active');
+        } else {
+            bgmBtn.innerText = d.bgmBtn;
+            bgmBtn.classList.remove('active');
+        }
+    }
+
+    /* [AUDIO MIXING] BGM playback and listener sync */
+    async function toggleBGM() {
+        const d = i18n[currentUI] || i18n['en'];
+        const lang = document.getElementById('langName').value.trim();
+        const selectedFile = document.getElementById('musicSelect').value;
+
+        if (!audioCtx) return alert(d.alertInit);
+        if (!selectedFile) return alert(d.alertBgmFile);
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+        // Stop BGM if already playing
+        if (bgmBufferSource && bgmBufferSource.isPlaying) {
+            stopBGM();
+            socket.emit('bgm-sync', { lang: lang, isPlaying: false, fileName: "" });
+            return;
+        }
+
+        try {
+            const bgmBtn = document.getElementById('bgmBtn');
+            bgmBtn.disabled = true;
+            bgmBtn.innerText = "...Loading...";
+
+            const response = await fetch(`/music/${selectedFile}`);
+            const arrayBuffer = await response.arrayBuffer();
+            cachedAudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+            bgmBufferSource = audioCtx.createBufferSource();
+            bgmBufferSource.buffer = cachedAudioBuffer;
+            bgmBufferSource.loop = true;
+            // Route BGM to both the mixer (for broadcast) and gain control
+            bgmBufferSource.connect(bgmGain).connect(mixedDest);
+            
+            bgmBufferSource.start(0);
+            bgmBufferSource.isPlaying = true;
+
+            bgmBtn.disabled = false;
+            updateButtonsAndStatus();
+            // Tell the server to notify listeners to play the same file locally
+            socket.emit('bgm-sync', { lang: lang, isPlaying: true, fileName: selectedFile });
+        } catch (e) {
+            alert("BGM Error: " + e.message);
+            document.getElementById('bgmBtn').disabled = false;
+        }
+    }
+
+    function stopBGM() {
+        if (bgmBufferSource) {
+            try { bgmBufferSource.stop(); } catch(e) {}
+            bgmBufferSource.isPlaying = false;
+        }
+        updateButtonsAndStatus();
+    }
+
+    /* [INIT] Requesting Mic & Setting up Mixer nodes */
+    async function requestMicPermission() {
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const select = document.getElementById('deviceSelect');
+            select.innerHTML = '';
+            devices.filter(d => d.kind === 'audioinput').forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.deviceId;
+                opt.text = d.label || `Mic ${select.length + 1}`;
+                select.appendChild(opt);
+            });
+            
+            document.getElementById('initBtn').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                micGain = audioCtx.createGain(); 
+                bgmGain = audioCtx.createGain();
+                // Create a virtual destination that merges all sounds
+                mixedDest = audioCtx.createMediaStreamDestination();
+                
+                micGain.gain.value = document.getElementById('micVol').value;
+                bgmGain.gain.value = document.getElementById('bgmVol').value;
+
+                // Bind slider inputs to Audio Gain Nodes
+                document.getElementById('micVol').oninput = (e) => micGain.gain.setTargetAtTime(e.target.value, audioCtx.currentTime, 0.01);
+                document.getElementById('bgmVol').oninput = (e) => bgmGain.gain.setTargetAtTime(e.target.value, audioCtx.currentTime, 0.01);
+            }
+            
+            await fetchMusicList(); 
+            updateButtonsAndStatus();
+        } catch (e) { alert("Mic Permission Denied."); }
+    }
+
+    /* [BROADCAST] Starting the WebRTC Engine */
+    async function toggleBroadcast() {
+        const d = i18n[currentUI] || i18n['en'];
+        const lang = document.getElementById('langName').value.trim();
+        if(!lang) return alert(d.alertLang);
+
+        if (isBroadcasting) {
+            isBroadcasting = false;
+            socket.emit('admin-stop', lang);
+            // Close all active peer connections
+            for (let id in peers) { peers[id].close(); delete peers[id]; }
+            if (micStream) micStream.getTracks().forEach(t => t.stop());
+            document.getElementById('fill').style.width = "0%";
+            socket.emit('audio-sync', { lang: lang, vol: 0 });
+            updateButtonsAndStatus();
+            return;
+        }
+
+        try {
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            // Capture specific microphone
+            micStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { deviceId: { exact: document.getElementById('deviceSelect').value } } 
+            });
+            micSource = audioCtx.createMediaStreamSource(micStream);
+            // Connect Mic to the Mixer
+            micSource.connect(micGain).connect(mixedDest);
+
+            // Use the mixed output as the broadcast source
+            localStream = mixedDest.stream;
+            isBroadcasting = true;
+            socket.emit('admin-start', lang);
+            setupVisualizer(localStream);
+            updateButtonsAndStatus();
+        } catch(e) { alert("Broadcast failed: " + e.message); }
+    }
+
+    /* [SIGNALING] Handling WebRTC Offer/Answer for new Listeners */
+    socket.on('new-listener', async (listenerId) => {
+        if (!isBroadcasting) return;
+        // Create Peer Connection for EACH listener (SFU-like behavior)
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        peers[listenerId] = pc;
+        // Add the mixed broadcast track to this peer
+        localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+        
+        pc.onicecandidate = (e) => e.candidate && socket.emit('message', { to: listenerId, candidate: e.candidate });
+        
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('message', { to: listenerId, sdp: pc.localDescription });
+    });
+
+    socket.on('message', async (d) => {
+        if (peers[d.from] && d.sdp) await peers[d.from].setRemoteDescription(d.sdp);
+        else if (peers[d.from] && d.candidate) await peers[d.from].addIceCandidate(d.candidate);
+    });
+
+    /* [MONITOR] Visualizer & Audio Sync for Clients */
+    function setupVisualizer(stream) {
+        const ans = audioCtx.createAnalyser();
+        audioCtx.createMediaStreamSource(stream).connect(ans);
+        const data = new Uint8Array(ans.frequencyBinCount);
+        const lang = document.getElementById('langName').value.trim();
+        const update = () => {
+            if(!isBroadcasting) return;
+            ans.getByteFrequencyData(data);
+            const vol = (data.reduce((a,b)=>a+b)/data.length)*4;
+            document.getElementById('fill').style.width = Math.min(vol, 100) + "%";
+            // Emit volume to server so client-side visualizers match
+            socket.emit('audio-sync', { lang: lang, vol: vol });
+            requestAnimationFrame(update);
+        };
+        update();
+    }
+
+    /* [STATS] Update real-time listener count from Socket.IO */
+    socket.on('update-stats', (data) => {
+        const currentLang = document.getElementById('langName').value.trim();
+        const count = data.stats[currentLang] || 0;
+        const display = document.getElementById('listenerCount');
+        const d = i18n[currentUI] || i18n['en'];
+        display.innerText = count + (d.listeners || " Listeners");
+        display.style.display = isBroadcasting ? 'block' : 'none';
+    });
+
+    // Default Init
+    changeUILanguage('en');
+</script>
+</body>
+</html>
