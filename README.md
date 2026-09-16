@@ -4,6 +4,13 @@ A zero-internet, local-network real-time audio and background music interpretati
 
 ---
 
+## 📺 Video Demo & Tutorial
+Watch the complete system walkthrough and operation guide on YouTube:
+[![WebRTC Live Interpretation System User Guide](https://img.youtube.com/vi/aTFk9WxoXNI/0.jpg)](https://www.youtube.com/watch?v=aTFk9WxoXNI)
+👉 **[Watch the full demo video on YouTube](https://www.youtube.com/watch?v=aTFk9WxoXNI)**
+
+---
+
 ## 🚀 Quick Start for Colleagues (One-Click Deployment)
 
 Make sure your computer has **Node.js** installed first. You do **not** need to manually install dependencies or generate SSL certificates; the startup scripts will handle everything automatically on the first run!
