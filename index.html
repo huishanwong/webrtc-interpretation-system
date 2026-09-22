@@ -6,58 +6,41 @@
     <title>Live Interpretation System</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* [UI/UX STYLING] Base document styles and layout */
         body { 
             font-family: -apple-system, system-ui, sans-serif; 
             background: #f1f5f9; padding: 20px; display: flex; flex-direction: column; align-items: center; color: #1e293b; 
-            transition: direction 0.3s ease; /* Smooth transition for RTL (Arabic) layout */
+            transition: direction 0.3s ease;
         }
         .container { 
             max-width: 480px; width: 100%; background: white; border-radius: 24px; padding: 25px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); 
         }
-        
-        /* Language selector styling */
         .ui-lang-wrapper { text-align: right; margin-bottom: 15px; }
         #uiLangSelect { 
             padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; background: #fff; color: #334155;
         }
-
-        /* Title and text styles */
         h1 { font-size: 22px; color: #0f172a; margin-bottom: 5px; text-align: center; }
         .subtitle { text-align: center; font-size: 14px; color: #64748b; margin-bottom: 24px; }
-        
-        /* [CHANNEL INTERFACE] Styles for the language selection buttons */
         #channelList { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
-        
         .lang-btn { 
             padding: 18px; border-radius: 16px; border: 2px solid #e2e8f0; background: #ffffff; color: #334155; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
         }
-        /* Swap icon position for Arabic layout */
         [dir="rtl"] .lang-btn { flex-direction: row-reverse; } 
-
         .lang-btn.active { background: #2563eb; color: white; border-color: #1d4ed8; }
         .lang-btn.paused { background: #fff1f2; color: #e11d48; border: 2px dashed #fb7185; }
         .status-tag { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,0.06); }
         .active .status-tag { background: rgba(255,255,255,0.2); }
-
-        /* [AUDIO VISUALIZER] UI for volume meter and playback control */
         .control-panel { background: #f8fafc; padding: 20px; border-radius: 18px; text-align: center; border: 1px solid #e2e8f0; }
         #statusText { font-weight: 600; font-size: 14px; color: #475569; margin-bottom: 12px; }
         #stopBtn { background: #ef4444; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 15px; width: 100%; display: none; }
-        
         .meter-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
         #fill { width: 0%; height: 100%; background: #10b981; transition: width 0.1s ease; } 
-
-        /* [GUIDELINES] Instructional area for users */
         .instructions { background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 12px; margin-top: 25px; }
         .instructions h4 { margin: 0 0 12px 0; font-size: 14px; color: #92400e; display: flex; align-items: center; gap: 6px; }
         .instruction-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
         .instruction-item:last-child { margin-bottom: 0; }
         .instruction-emoji { font-size: 16px; flex-shrink: 0; }
         .instruction-text { font-size: 13px; color: #b45309; line-height: 1.4; font-weight: 500; text-align: left; }
-
         .empty-msg { color: #94a3b8; font-style: italic; font-size: 14px; text-align: center; padding: 20px; }
-
         footer {
             margin-top: 25px; padding-top: 15px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; color: #94a3b8; letter-spacing: 0.5px;
         }
@@ -68,30 +51,38 @@
 <div class="container">
     <div class="ui-lang-wrapper" id="uiWrapper">
         <select id="uiLangSelect" onchange="changeUILanguage(this.value)">
-            <option value="zh">🇭🇰 繁體中文</option>
-            <option value="ch">🇨🇳 简体中文</option>
+            <!-- Core / East Asia -->
+            <option value="zh">🇭🇰 繁體中文 (Traditional Chinese)</option>
+            <option value="ch">🇨🇳 简体中文 (Simplified Chinese)</option>
             <option value="en" selected>🇬🇧 English</option>
-            <option value="ko">🇰🇷 한국어</option>
-            <option value="ja">🇯🇵 日本語</option>
-            <option value="de">🇩🇪 Deutsch</option>
-            <option value="fr">🇫🇷 Français</option>
-            <option value="es">🇪🇸 Español</option>
-            <option value="pt">🇵🇹 Português</option>
-            <option value="it">🇮🇹 Italiano</option>
-            <option value="pl">🇵🇱 Polski</option>
-            <option value="ru">🇷🇺 Русский</option>
-            <option value="uk">🇺🇦 Українська</option>
-            <option value="tr">🇹🇷 Türkçe</option>
-            <option value="id">🇮🇩 Bahasa Indonesia</option>
-            <option value="tl">🇵🇭 Filipino</option>
-            <option value="th">🇹🇭 ไทย</option>
-            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="ko">🇰🇷 한국어 (Korean)</option>
+            <option value="ja">🇯🇵 日本語 (Japanese)</option>
+            <option value="de">🇩🇪 Deutsch (German)</option>
+            <option value="fr">🇫🇷 Français (French)</option>
+            <option value="es">🇪🇸 Español (Spanish)</option>
+            <option value="pt">🇵🇹 Português (Portuguese)</option>
+            <option value="it">🇮🇹 Italiano (Italian)</option>
+            <option value="pl">🇵🇱 Polski (Polish)</option>
+            <option value="ru">🇷🇺 Русский (Russian)</option>
+            <option value="uk">🇺🇦 Українська (Ukrainian)</option>
+            <option value="tr">🇹🇷 Türkçe (Turkish)</option>
+            <option value="ar">🇸🇦 العربية (Arabic)</option>
+            <option value="fa">🇮🇷 فارسی (Persian)</option>
+            <option value="he">🇮🇱 עברית (Hebrew)</option>
+            <option value="ur">🇵🇰 اردو (Urdu)</option>
+            <option value="ku">🏴 Kurdî (Kurdish)</option>
+            <option value="bn">🇧🇩 বাংলা (Bengali)</option>
+            <option value="ta">🇱🇰 தமிழ் (Tamil)</option>
+            <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+            <option value="sw">🇹🇿 Kiswahili (Swahili)</option>
+            <option value="id">🇮🇩 Bahasa Indonesia (Indonesian)</option>
+            <option value="tl">🇵🇭 Filipino (Tagalog)</option>
+            <option value="th">🇹🇭 ไทย (Thai)</option>
+            <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
             <option value="my">🇲🇲 မြန်မာဘာသာ (Burmese)</option>
             <option value="ms">🇲🇾 Bahasa Melayu (Malay)</option>
             <option value="km">🇰🇭 ភាសាខ្មែរ (Khmer)</option>
-            <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
             <option value="mn">🇲🇳 Монгол хэл (Mongolian)</option>
-            <option value="ar">🇸🇦 العربية</option>
         </select>
     </div>
 
@@ -136,7 +127,6 @@
 <audio id="audio" autoplay playsinline></audio>
 
 <script>
-    /* [GLOBAL VARIABLES] */
     const socket = io();
     let pc, currentLang = null, audioCtx, visualizerActive = false;
     const audio = document.getElementById('audio');
@@ -145,13 +135,11 @@
     let currentUI = "en";
     let isConnectionLost = false;
 
-    /* [BGM PLAYER] Handles background music when interpreter is offline */
     const bgmPlayer = new Audio();
     bgmPlayer.loop = true;
     bgmPlayer.crossOrigin = "anonymous";
     bgmPlayer.playsInline = true;
 
-    /* [I18N DATA] Multilingual Dictionary */
     const i18n = {
         zh: { title: "即時傳譯系統", subtitle: "請選擇收聽語言", waiting: "等待傳譯員啟動...", stop: "⏹ 停止播放", select: "請選擇語言開始收聽", listening: "🟢 正在收聽：", paused: "⏸ 傳譯已暫停", connectionLost: "⚠️ 網路連線中斷，請確認是否仍連接至會議 Wi-Fi", btn_listening: "播放中 ●", btn_paused: "暫停中 ⏸", btn_tap: "點擊收聽", guideTitle: "🎧 收聽指引", ins1: "請保持連接現場指定的 Wi-Fi 以收聽傳譯。", ins2: "請佩戴耳機。", ins3: "請勿離開此頁面。", ins4: "如訊號中斷，請重新選擇收聽語言。" },
         ch: { title: "即时传译系统", subtitle: "请选择收听语言", waiting: "Waiting for interpreters...", stop: "⏹ 停止播放", select: "请选择语言开始收听", listening: "🟢 正在收听：", paused: "⏸ 传译已暂停", connectionLost: "⚠️ 网络连线中断，请确认是否仍连接至会议 Wi-Fi", btn_listening: "播放中 ●", btn_paused: "暂停中 ⏸", btn_tap: "点击收听", guideTitle: "🎧 收听指引", ins1: "请保持连接现场指定的 Wi-Fi 以收听传译。", ins2: "请佩戴耳机。", ins3: "请勿离开此页面。", ins4: "如讯号中断，请重新选择收听语言。" },
@@ -167,6 +155,14 @@
         ru: { title: "Перевод", subtitle: "Выберите язык", waiting: "Ожидание...", stop: "⏹ Остановить", select: "Выберите язык для прослушивания", listening: "🟢 Слушаете: ", paused: "⏸ Пауза", connectionLost: "⚠️ Связь потеряна. Проверьте Wi-Fi.", btn_listening: "Слушаю ●", btn_paused: "Пауза ⏸", btn_tap: "Нажмите", guideTitle: "🎧 Инструкция", ins1: "Оставайтесь в Wi-Fi сети мероприятия.", ins2: "Используйте наушники.", ins3: "Не уходите с этой страницы.", ins4: "При сбое выберите язык повторно." },
         uk: { title: "Система синхронного перекладу", subtitle: "Виберіть свою мову", waiting: "Очікування перекладача...", stop: "⏹ Зупинити", select: "Виберіть мову для прослуховування", listening: "🟢 Ви слухаєте: ", paused: "⏸ Переклад призупинено", connectionLost: "⚠️ З'єднання втрачено. Перевірте Wi-Fi.", btn_listening: "Слухаю ●", btn_paused: "Пауза ⏸", btn_tap: "Натисніть", guideTitle: "🎧 Інструкція", ins1: "Залишайтеся підключеними до Wi-Fi події.", ins2: "Використовуйте навушники.", ins3: "Не залишайте цю сторінку.", ins4: "У разі переривання сигналу виберіть мову знову." },
         tr: { title: "Canlı Çeviri Sistemi", subtitle: "Dilinizi seçin", waiting: "Çevirmen bekleniyor...", stop: "⏹ Durdur", select: "Dinlemek için bir dil seçin", listening: "🟢 Dinleniyor: ", paused: "⏸ Çeviri duraklatıldı", connectionLost: "⚠️ Bağlantı kesildi. Wi-Fi ağını kontrol edin.", btn_listening: "Dinleniyor ●", btn_paused: "Duraklatıldı ⏸", btn_tap: "Dinlemek için dokun", guideTitle: "🎧 Kullanım Kılavuzu", ins1: "Etkinlik Wi-Fi ağına bağlı kalın.", ins2: "Lütfen kulaklık kullanın.", ins3: "Bu sayfadan ayrılmayın.", ins4: "Sinyal kesilirse dili yeniden seçin." },
+        ar: { title: "ترجمة فورية", subtitle: "اختر اللغة", waiting: "في الانتظار...", stop: "⏹ إيقاف", select: "اختر لغة للاستماع", listening: "🟢 جاري الاستماع: ", paused: "⏸ متوقف", connectionLost: "⚠️ انقطع الاتصال. يجدر التحقق من شبكة Wi-Fi.", btn_listening: "استماع ●", btn_paused: "مؤقت ⏸", btn_tap: "اضغط هنا", guideTitle: "🎧 تعليمات الاستخدام", ins1: "يرجى البقاء متصلاً بشبكة Wi-Fi.", ins2: "يرجى استخدام سماعات الأذن.", ins3: "يرجى عدم مغادرة هذه الصفحة.", ins4: "إذا انقطع الاتصال، اختر اللغة مجدداً." },
+        fa: { title: "ترجمه زنده", subtitle: "زبان خود را انتخاب کنید", waiting: "در انتظار مترجم...", stop: "⏹ توقف پخش", select: "یک زبان برای گوش دادن انتخاب کنید", listening: "🟢 در حال گوش دادن: ", paused: "⏸ ترجمه متوقف شد", connectionLost: "⚠️ ارتباط قطع شد. لطفاً شبکه Wi-Fi را بررسی کنید.", btn_listening: "در حال گوش دادن ●", btn_paused: "مکث ⏸", btn_tap: "برای گوش دادن ضربه بزنید", guideTitle: "🎧 راهنمای کاربر", ins1: "لطفاً برای گوش دادن به Wi-Fi تعیین شده متصل بمانید.", ins2: "لطفاً از هدست استفاده کنید.", ins3: "لطفاً این صفحه را ترک نکنید.", ins4: "اگر سیگنال قطع شد، لطفاً زبان را دوباره انتخاب کنید." },
+        he: { title: "תרגום חי", subtitle: "בחר את השפה שלך", waiting: "ממתין למתורגמן...", stop: "⏹ עצור האזנה", select: "בחר שפה להאזנה", listening: "🟢 מאזין ל: ", paused: "⏸ תרגום מושהה", connectionLost: "⚠️ החיבור אבד. אנא בדוק את רשת ה-Wi-Fi.", btn_listening: "מאזין ●", btn_paused: "מושהה ⏸", btn_tap: "הקש להאזנה", guideTitle: "🎧 הנחיות למשתמש", ins1: "אנא הישאר מחובר ל-Wi-Fi של האירוע כדי להאזין.", ins2: "אנא השתמש באוזניות.", ins3: "אנא אל תעזוב דף זה.", ins4: "אם האות מנותק, אנא בחר מחדש את השפה." },
+        ur: { title: "لائیو ترجمہ", subtitle: "اپنی پسندیدہ زبان منتخب کریں", waiting: "مترجم کا انتظار ہے...", stop: "⏹ ترجمہ بند کریں", select: "سننے کے لیے زبان منتخب کریں", listening: "🟢 سن رہے ہیں: ", paused: "⏸ ترجمہ موقوف", connectionLost: "⚠️ کنکشن منقطع ہو گیا۔ براہ کرم Wi-Fi چیک کریں۔", btn_listening: "سن رہے ہیں ●", btn_paused: "موقوف ⏸", btn_tap: "سننے के لیے ٹیپ کریں", guideTitle: "🎧 صارف کے رہنما خطوط", ins1: "سننے کے لیے نامزد مقام کے وائی فائی سے جڑے رہیں۔", ins2: "براہ کرم ایئر فون استعمال کریں۔", ins3: "براہ کرم اس صفحہ کو نہ چھوڑیں۔", ins4: "اگر سگنل منقطع ہو جائے تو براہ کرم زبان دوبارہ منتخب کریں۔" },
+        ku: { title: "Wergerandina Zindî", subtitle: "Zimanê xwe hilbijêre", waiting: "Li bendê ye ku wergêr dest pê bike...", stop: "⏹ Rawestîne", select: "Ji bo guhdarîkirinê zimanekî hilbijêre", listening: "🟢 Guhdarî dike: ", paused: "⏸ Wergerandin hate rawestandin", connectionLost: "⚠️ Têkilî qut bû. Ji kerema xwe Wi-Fi kontrol bike.", btn_listening: "Guhdarî dike ●", btn_paused: "Rawestandî ⏸", btn_tap: "Bixe ji bo guhdarîkirinê", guideTitle: "🎧 Rênîşandana Bikarhêner", ins1: "Ji kerema xwe ji bo guhdarîkirinê bi Wi-Fi ve girêdayî bimîne.", ins2: "Ji kerema xwe guhlistenan bikar bîne.", ins3: "Ji kerema xwe vê rûpelê nerevîne.", ins4: "Heke sînyal qut bibe, ji kerema xwe ziman dîsa hilbijêre." },
+        bn: { title: "লাইভ ইন্টারপ্রিটেশন", subtitle: "আপনার পছন্দের ভাষা নির্বাচন করুন", waiting: "দোভাষীর জন্য অপেক্ষা করা হচ্ছে...", stop: "⏹ ইন্টারপ্রিটেশন বন্ধ করুন", select: "শোনার জন্য একটি ভাষা নির্বাচন করুন", listening: "🟢 শুনছেন: ", paused: "⏸ ইন্টারপ্রিটেশন বিরতি দেওয়া হয়েছে", connectionLost: "⚠️ সংযোগ বিচ্ছিন্ন হয়ে গেছে। আপনি এখনও ভেন্যু ওয়াই-ফাই-এ আছেন কিনা তা পরীক্ষা করুন।", btn_listening: "শুনছেন ●", btn_paused: "বিরতি ⏸", btn_tap: "শুনতে ট্যাপ করুন", guideTitle: "🎧 ব্যবহারকারী নির্দেশিকা", ins1: "শুনতে নির্ধারিত ভেন্যু ওয়াই-ফাই-এর সাথে সংযুক্ত থাকুন।", ins2: "দয়া করে ইয়ারফোন ব্যবহার করুন।", ins3: "দয়া করে এই পৃষ্ঠাটি ছেড়ে যাবেন না।", ins4: "সিগন্যাল ব্যাহত হলে, অনুগ্রহ করে ভাষাটি আবার নির্বাচন করুন।" },
+        ta: { title: "நேரலை மொழிபெயர்ப்பு", subtitle: "உங்களுக்கு விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்", waiting: "மொழிபெயர்ப்பாளர்களுக்காகக் காத்திருக்கிறது...", stop: "⏹ மொழிபெயர்ப்பை நிறுத்து", select: "கேட்க ஒரு மொழியைத் தேர்ந்தெடுக்கவும்", listening: "🟢 கேட்கிறது: ", paused: "⏸ மொழிபெயர்ப்பு இடைநிறுத்தப்பட்டது", connectionLost: "⚠️ இணைப்பு துண்டிக்கப்பட்டது. வைஃபை இணைப்பில் உள்ளீர்களா என்பதைச் சரிபார்க்கவும்.", btn_listening: "கேட்கிறது ●", btn_paused: "இடைநிறுத்தப்பட்டது ⏸", btn_tap: "கேட்க தட்டவும்", guideTitle: "🎧 பயனர் வழிகாட்டுதல்கள்", ins1: "கேட்க நியமிக்கப்பட்ட வைஃபை உடன் இணைந்திருக்கவும்.", ins2: "தயவுசெய்து இயர்போன்களைப் பயன்படுத்தவும்.", ins3: "இந்தப் பக்கத்தை விட்டு வெளியேற வேண்டாம்.", ins4: "சிக்னல் தடைபட்டால், மொழியை மீண்டும் தேர்ந்தெடுக்கவும்." },
+        sw: { title: "Tafsiri ya Moja kwa Moja", subtitle: "Tafadhali chagua lugha unayopenda", waiting: "Inasubiri wakalimani...", stop: "⏹ Acha Tafsiri", select: "Chagua lugha ya kusikiliza", listening: "🟢 Unasikiliza: ", paused: "⏸ Tafsiri imesitishwa", connectionLost: "⚠️ Muunganisho umepotea. Tafadhali angalia Wi-Fi ya ukumbi.", btn_listening: "Unasikiliza ●", btn_paused: "Imesitishwa ⏸", btn_tap: "Gusa Kusikiliza", guideTitle: "🎧 Miongozo ya Mtumiaji", ins1: "Tafadhali endelea kuunganishwa na Wi-Fi ya ukumbi ulioteuliwa kusikiliza.", ins2: "Tafadhali tumia vipokea sauti.", ins3: "Tafadhali usiache ukurasa huu.", ins4: "Ikiwa mawimbi yatakatika, tafadhali chagua tena lugha." },
         id: { title: "Sistem Interpretasi", subtitle: "Silakan pilih bahasa Anda", waiting: "Menunggu penerjemah...", stop: "⏹ Berhenti", select: "Pilih bahasa untuk mendengarkan", listening: "🟢 Mendengarkan: ", paused: "⏸ Ditunda", connectionLost: "⚠️ Koneksi terputus. Periksa Wi-Fi Anda.", btn_listening: "Mendengarkan ●", btn_paused: "Ditunda ⏸", btn_tap: "Ketuk", guideTitle: "🎧 Panduan Pengguna", ins1: "Harap tetap terhubung ke Wi-Fi acara.", ins2: "Harap gunakan earphone.", ins3: "Jangan tinggalkan halaman ini.", ins4: "Jika sinyal terputus, pilih ulang bahasa." },
         tl: { title: "Live na Interpretasyon", subtitle: "Mangyaring piliin ang iyong wika", waiting: "Naghihintay sa tagapagsalin...", stop: "⏹ Itigil", select: "Pumili ng wika para makinig", listening: "🟢 Nakikinig sa: ", paused: "⏸ Naka-pause", connectionLost: "⚠️ Naputol ang koneksyon. Suriin ang Wi-Fi.", btn_listening: "Nakikinig ●", btn_paused: "Naka-pause ⏸", btn_tap: "I-tap", guideTitle: "🎧 Gabay sa Pakikinig", ins1: "Manatiling nakakonekta sa Wi-Fi ng venue.", ins2: "Mangyaring gumamit ng earphone.", ins3: "Huwag iwanan ang pahinang ito.", ins4: "Kung maputol ang signal, piliin muli ang wika." },
         th: { title: "ระบบล่ามแปลภาษา", subtitle: "กรุณาเลือกภาษาที่ต้องการฟัง", waiting: "กำลังรอตัวแทนล่าม...", stop: "⏹ หยุดการฟัง", select: "เลือกภาษาเพื่อเริ่มฟัง", listening: "🟢 กำลังฟัง: ", paused: "⏸ การแปลหยุดชั่วคราว", connectionLost: "⚠️ การเชื่อมต่อขาดหาย กรุณาตรวจสอบ Wi-Fi", btn_listening: "กำลังฟัง ●", btn_paused: "หยุดชั่วคราว ⏸", btn_tap: "แตะเพื่อฟัง", guideTitle: "🎧 คำแนะนำการใช้งาน", ins1: "กรุณาเชื่อมต่อ Wi-Fi ของสถานที่เพื่อฟัง", ins2: "กรุณาสวมหูฟัง", ins3: "กรุณาอย่าออกจากหน้านี้", ins4: "หากสัญญาณขาดหาย เลือกภาษาใหม่อีกครั้ง" },
@@ -175,11 +171,9 @@
         ms: { title: "Sistem Terjemahan", subtitle: "Sila pilih bahasa pilihan anda", waiting: "Menunggu penterjemah...", stop: "⏹ Berhenti", select: "Pilih bahasa untuk didengar", listening: "🟢 Mendengar: ", paused: "⏸ Dijeda", connectionLost: "⚠️ Sambungan terputus. Sila semak Wi-Fi.", btn_listening: "Mendengar ●", btn_paused: "Dijeda ⏸", btn_tap: "Tekan untuk dengar", guideTitle: "🎧 Panduan Pengguna", ins1: "Sila kekal bersambung dengan Wi-Fi acara.", ins2: "Sila gunakan fon telinga.", ins3: "Jangan tinggalkan halaman ini.", ins4: "Jika isyarat terputus, pilih semula bahasa." },
         km: { title: "ប្រព័ន្ធបកប្រែផ្ទាល់", subtitle: "សូមជ្រើសរើសភាសា", waiting: "កំពុងរង់ចាំ...", stop: "⏹ ឈប់ស្តាប់", select: "ជ្រើសរើសភាសាដើម្បីស្តាប់", listening: "🟢 កំពុងស្តាប់៖ ", paused: "⏸ បានផ្អាក", connectionLost: "⚠️ បាត់បង់ការតភ្ជាប់។ សូមពិនិត្យមើល Wi-Fi។", btn_listening: "កំពុងស្តាប់ ●", btn_paused: "ផ្អាក ⏸", btn_tap: "ចុចដើម្បីស្តាប់", guideTitle: "🎧 ការណែនាំ", ins1: "សូមរក្សាការតភ្ជាប់ Wi-Fi ក្នុងកម្មវិធី។", ins2: "សូមប្រើកាសស្តាប់ត្រចៀក។", ins3: "សូមកុំចាកចេញពីទំព័រនេះ។", ins4: "ប្រសិនបើមានបញ្ហា សូមជ្រើសរើសភាសាម្ដងទៀត។" },
         hi: { title: "लाइव अनुवाद प्रणाली", subtitle: "अपनी पसंदीदा भाषा चुनें", waiting: "प्रतीक्षा कर रहे हैं...", stop: "⏹ बंद करें", select: "सुनने के लिए भाषा चुनें", listening: "🟢 सुन रहे हैं: ", paused: "⏸ रुका हुआ है", connectionLost: "⚠️ कनेक्शन टूट गया। कृपया Wi-Fi जांचें।", btn_listening: "सुन रहे हैं ●", btn_paused: "रुका हुआ ⏸", btn_tap: "सुने", guideTitle: "🎧 उपयोग निर्देश", ins1: "कृपया वाई-फाई से जुड़े रहें।", ins2: "कृपया इयरफोन का उपयोग करें।", ins3: "इस पृष्ठ को न छोड़ें।", ins4: "सिग्नल टूटने पर भाषा पुनः चुनें।" },
-        mn: { title: "Шууд орчуулгын систем", subtitle: "Хэлээ сонгоно уу", waiting: "Хүлээж байна...", stop: "⏹ Зогсоох", select: "Сонсох хэлээ сонгоно уу", listening: "🟢 Сонсож байна: ", paused: "⏸ Түр зогссон", connectionLost: "⚠️ Холболт тасарлаа. Wi-Fi-гаа шалгана уу.", btn_listening: "Сонсож байна ●", btn_paused: "Түр зогссон ⏸", btn_tap: "Дарж сонсох", guideTitle: "🎧 Зааварчилгаа", ins1: "Арга хэмжээний Wi-Fi-д холбогдсон хэвээр байгаарай.", ins2: "Чихэвч ашиглана уу.", ins3: "Энэ хуудаснаас гарахгүй байх.", ins4: "Сонжмол тасалдвал хэлээ дахин сонгоно уу." },
-        ar: { title: "ترجمة فورية", subtitle: "اختر اللغة", waiting: "في الانتظار...", stop: "⏹ إيقاف", select: "اختر لغة للاستماع", listening: "🟢 جاري الاستماع: ", paused: "⏸ متوقف", connectionLost: "⚠️ انقطع الاتصال. يجدر التحقق من شبكة Wi-Fi.", btn_listening: "استماع ●", btn_paused: "مؤقت ⏸", btn_tap: "اضغط هنا", guideTitle: "🎧 تعليمات الاستخدام", ins1: "يرجى البقاء متصلاً بشبكة Wi-Fi.", ins2: "يرجى استخدام سماعات الأذن.", ins3: "يرجى عدم مغادرة هذه الصفحة.", ins4: "إذا انقطع الاتصال، اختر اللغة مجدداً." }
+        mn: { title: "Шууд орчуулгын систем", subtitle: "Хэлээ сонгоно уу", waiting: "Хүлээж байна...", stop: "⏹ Зогсоох", select: "Сонсох хэлээ сонгоно уу", listening: "🟢 Сонсож байна: ", paused: "⏸ Түр зогссон", connectionLost: "⚠️ Холболт тасарлаа. Wi-Fi-гаа шалгана уу.", btn_listening: "Сонсож байна ●", btn_paused: "Түр зогссон ⏸", btn_tap: "Дарж сонсох", guideTitle: "🎧 Зааварчилгаа", ins1: "Арга хэмжээний Wi-Fi-д холбогдсон хэвээр байгаарай.", ins2: "Чихэвч ашиглана уу.", ins3: "Энэ хуудаснаас гарахгүй байх.", ins4: "Сонжмол тасалдвал хэлээ дахин сонгоно уу." }
     };
 
-    /* [UI SWITCHER] Changes language across the entire page */
     function changeUILanguage(langCode) {
         currentUI = langCode;
         const dict = i18n[langCode] || i18n['en'];
@@ -187,8 +181,7 @@
         const uiWrapper = document.getElementById('uiWrapper');
         const instructionTexts = document.querySelectorAll('.instruction-text');
 
-        /* Handle Right-to-Left (RTL) for Arabic */
-        if (langCode === 'ar') {
+        if (['ar', 'fa', 'he', 'ur', 'ku'].includes(langCode)) {
             body.setAttribute('dir', 'rtl');
             uiWrapper.style.textAlign = 'left'; 
             instructionTexts.forEach(el => el.style.textAlign = 'right');
@@ -200,7 +193,6 @@
             document.getElementById('ui-guide-title').style.flexDirection = 'row';
         }
 
-        /* Update DOM text */
         document.getElementById('ui-title').innerText = dict.title;
         document.getElementById('ui-subtitle').innerText = dict.subtitle;
         document.getElementById('stopBtn').innerText = dict.stop;
@@ -220,9 +212,9 @@
         
         if (isConnectionLost) {
             statusEl.innerText = dict.connectionLost;
-            statusEl.style.color = "#dc2626"; // Red warning color
+            statusEl.style.color = "#dc2626";
         } else {
-            statusEl.style.color = "#475569"; // Default text color
+            statusEl.style.color = "#475569";
             if (!currentLang) {
                 statusEl.innerText = dict.select;
             } else if (!activeChannelsList.includes(currentLang)) {
@@ -233,7 +225,6 @@
         }
     }
 
-    /* [NETWORK] Socket events */
     socket.emit('get-channels');
 
     socket.on('update-channels', (channels) => {
@@ -241,11 +232,9 @@
         activeChannelsList = channels;
         renderButtons();
         
-        /* Auto-reconnect if language comes back online */
         if (currentLang && channels.includes(currentLang)) {
             const isDisconnected = !pc || pc.connectionState === 'disconnected' || pc.connectionState === 'closed';
             if (wasPaused || isDisconnected) {
-                console.log("Channel restored, reconnecting...");
                 startListening(currentLang);
             }
         }
@@ -258,18 +247,16 @@
                 bgmPlayer.src = musicUrl;
                 bgmPlayer.load();
             }
-            bgmPlayer.play().catch(e => console.log("BGM pending unlock"));
+            bgmPlayer.play().catch(e => {});
         } else {
             bgmPlayer.pause();
         }
     });
 
-    /* [WEBRTC] Logic to start audio stream with Connection State Monitoring */
     async function startListening(lang) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') await audioCtx.resume();
         
-        /* Unlock BGM player for user interaction requirement */
         bgmPlayer.play().then(() => { if (!bgmPlayer.src) bgmPlayer.pause(); }).catch(e => {});
 
         if (currentLang === lang && pc && pc.connectionState === 'connected') return;
@@ -291,12 +278,9 @@
         updateStatusDisplay();
         cleanupPC();
         
-        /* ICE Configuration */
         pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         
-        // Monitor WebRTC connection states (e.g. Wi-Fi Assist dropping traffic)
         pc.onconnectionstatechange = () => {
-            console.log("WebRTC Connection State:", pc.connectionState);
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
                 isConnectionLost = true;
                 updateStatusDisplay();
@@ -310,7 +294,7 @@
             audio.srcObject = e.streams[0];
             visualizerActive = false; 
             setupVisualizer(e.streams[0]);
-            audio.play().catch(err => console.warn("Autoplay block"));
+            audio.play().catch(err => {});
             updateStatusDisplay();
         };
 
@@ -336,7 +320,6 @@
         renderButtons();
     }
 
-    /* Signaling handling */
     socket.on('message', async (d) => {
         if (!pc || !currentLang) return;
         try {
@@ -353,7 +336,6 @@
         } catch (e) {}
     });
 
-    /* [VISUALIZER] Volume meter animation */
     function setupVisualizer(stream) {
         if (visualizerActive) return;
         visualizerActive = true;
@@ -373,7 +355,6 @@
         updateFill();
     }
 
-    /* [RENDER] Dynamic button creation */
     function renderButtons() {
         const list = document.getElementById('channelList');
         const dict = i18n[currentUI] || i18n['en'];
@@ -399,7 +380,6 @@
         });
     }
 
-    /* Initialize UI */
     changeUILanguage('en');
 </script>
 </body>
