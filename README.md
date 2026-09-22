@@ -82,12 +82,14 @@ Once the server is running, three distinct web pages power the system. Each serv
 ├── monitor.html         # Central technician dashboard (3-column layout)
 ├── music/               # Preloaded background & test music folder
 │   ├── arabic.mp3       # Arabic preloaded track
+│   ├── bengali.mp3.     # Bengali preloaded track
 │   ├── burmese.mp3      # Burmese preloaded track
 │   ├── cantonese.mp3    # Cantonese preloaded track
 │   ├── english.mp3      # English preloaded track
 │   ├── filipino.mp3     # Filipino preloaded track
 │   ├── french.mp3       # french preloaded track
 │   ├── german.mp3       # German preloaded track
+│   ├── hebrew.mp3       # Hebrew preloaded track
 │   ├── hindi.mp3        # Hindi preloaded track
 │   ├── indonesia.mp3    # Indonesia preloaded track
 │   ├── italian.mp3      # Italian preloaded track
@@ -96,13 +98,17 @@ Once the server is running, three distinct web pages power the system. Each serv
 │   ├── korean.mp3       # Korean preloaded track
 │   ├── malay.mp3        # Malay preloaded track
 │   ├── mandarin.mp3     # Mandarin preloaded track
-│   ├── polish           # Polish preloaded track
+│   ├── persian.mp3      # Persian preloaded track
+│   ├── polish.mp3       # Polish preloaded track
 │   ├── portuguese.mp3   # Portuguese preloaded track
 │   ├── russian.mp3      # Russian preloaded track
 │   ├── spanish.mp3      # Spanish preloaded track
+│   ├── swahili.mp3      # Swahili preloaded track
+│   ├── tamil.mp3        # Tamil preloaded track
 │   ├── thai.mp3         # Thai preloaded track
 │   ├── turkish.mp3      # Turkish preloaded track
 │   ├── ukrainian.mp3    # Ukrainian preloaded track
+│   ├── urdu.mp3         # Urdu preloaded track
 │   └── vietnamese.mp3   # Vietnamese preloaded track
 ├── qrcode.min.js        # Offline QR Code generator library
 ├── server.js            # Node.js backend & WebRTC signaling server
